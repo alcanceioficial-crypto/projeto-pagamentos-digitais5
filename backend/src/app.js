@@ -2,6 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const pixRoutes = require("./routes/pix.routes");
 const webhookRoutes = require("./routes/webhook.routes");
+const cartaoRoutes = require("./routes/cartao.routes");
 
 const app = express();
 
@@ -19,6 +20,7 @@ app.use(express.json());
 /* 📡 Rotas */
 app.use("/pix", pixRoutes);
 app.use("/webhook", webhookRoutes);
+app.use("/cartao", cartaoRoutes);
 
 /* 🩺 Health check */
 app.get("/", (req, res) => {
