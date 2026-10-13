@@ -15,7 +15,7 @@ const { salvarPedido } = require("../services/pedidoStore.service");
 ====================================================== */
 
 const PRECO_UNITARIO = 3.00;
-const DESCRICAO_PRODUTO = "Camiseta Levanta Limeira";
+const DESCRICAO_PRODUTO = `Camiseta Levanta Limeira - ${Date.now()}`;
 
 /* ======================================================
    LIMPA TELEFONE PARA O PADRÃO DA EFÍ
