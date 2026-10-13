@@ -20,7 +20,7 @@ function httpsAgent() {
   });
 }
 
-// 🔑 TOKEN (mesma rota de OAuth, mas na URL de cobranças)
+// 🔑 TOKEN
 async function getToken() {
   const response = await axios.post(
     `${baseURL}/v1/authorize`,
@@ -51,7 +51,12 @@ async function criarCobrancaCartao({ valor, descricao, nome, cpf, email, telefon
         amount: 1,
       },
     ],
-    // ✅ customer foi REMOVIDO daqui também
+    customer: {
+      name: nome,
+      cpf: (cpf || "").replace(/\D/g, ""),
+      email: email || "cliente@levantalimeira.com",
+      phone_number: (telefone || "").replace(/\D/g, ""),
+    },
   };
 
   const response = await axios.post(
@@ -72,6 +77,7 @@ async function criarCobrancaCartao({ valor, descricao, nome, cpf, email, telefon
     raw: response.data,
   };
 }
+
 /* ======================================================
    PAGAR COBRANÇA COM TOKEN DO CARTÃO
 ====================================================== */
@@ -91,11 +97,10 @@ async function pagarCobrancaCartao(chargeId, paymentToken, dadosCartao) {
           state: dadosCartao.estado || "SP",
           complement: dadosCartao.complemento || "",
         },
-        // ✅ ADICIONADO DE VOLTA AQUI (obrigatório para cartão)
         customer: {
           name: dadosCartao.nomeTitular,
           cpf: (dadosCartao.cpfTitular || "").replace(/\D/g, ""),
-          email: dadosCartao.email || "cliente@levantaLimeira.com",
+          email: dadosCartao.email || "cliente@levantalimeira.com",
           phone_number: (dadosCartao.telefone || "").replace(/\D/g, ""),
         },
       },
@@ -116,7 +121,28 @@ async function pagarCobrancaCartao(chargeId, paymentToken, dadosCartao) {
 
   return response.data;
 }
+
+/* ======================================================
+   CONSULTAR COBRANÇA POR CHARGE_ID
+====================================================== */
+async function consultarCobrancaCartao(chargeId) {
+  const token = await getToken();
+
+  const response = await axios.get(
+    `${baseURL}/v1/charge/${chargeId}`,
+    {
+      httpsAgent: httpsAgent(),
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+
+  return response.data;
+}
+
 module.exports = {
   criarCobrancaCartao,
   pagarCobrancaCartao,
+  consultarCobrancaCartao,
 };
