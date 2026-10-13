@@ -13,7 +13,7 @@ const { salvarPedido } = require("../services/pedidoStore.service");
    CONFIGURAÇÃO (DEVE SER IGUAL AO pix.routes.js)
 ====================================================== */
 
-const PRECO_UNITARIO = 0.50;
+const PRECO_UNITARIO = 3.00;
 const DESCRICAO_PRODUTO = "Camiseta Levanta Limeira";
 
 /* ======================================================
