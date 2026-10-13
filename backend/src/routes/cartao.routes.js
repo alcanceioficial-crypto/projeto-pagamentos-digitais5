@@ -5,6 +5,7 @@ const router = express.Router();
 const {
   criarCobrancaCartao,
   pagarCobrancaCartao,
+  consultarCobrancaCartao,
 } = require("../services/efiCartao.service");
 
 const { salvarPedido } = require("../services/pedidoStore.service");
@@ -17,23 +18,20 @@ const PRECO_UNITARIO = 3.00;
 const DESCRICAO_PRODUTO = "Camiseta Levanta Limeira";
 
 /* ======================================================
-   ✅ LIMPA TELEFONE PARA O PADRÃO DA EFÍ
+   LIMPA TELEFONE PARA O PADRÃO DA EFÍ
    Padrão exigido: ^[1-9]{2}9?[0-9]{8}$ (10 ou 11 dígitos)
 ====================================================== */
 function limparTelefone(tel) {
   let nums = (tel || "").replace(/\D/g, "");
 
-  // Remove o "55" do início (Brasil)
   if (nums.startsWith("55") && nums.length > 11) {
     nums = nums.slice(2);
   }
 
-  // Se ficou com mais de 11, pega só os últimos 11
   if (nums.length > 11) {
     nums = nums.slice(-11);
   }
 
-  // Se ficou com menos de 10, preenche com 0 à esquerda
   while (nums.length < 10) {
     nums = "0" + nums;
   }
@@ -95,7 +93,6 @@ router.post("/gerar_pagamento", async (req, res) => {
       totalPecas === 1 ? "peça" : "peças"
     }) - ${nome}`;
 
-    // ✅ LIMPA O TELEFONE UMA VEZ
     const telefoneLimpo = limparTelefone(whatsapp);
 
     console.log(`💳 Iniciando cobrança cartão | valor: R$ ${total} | peças: ${totalPecas}`);
@@ -108,7 +105,7 @@ router.post("/gerar_pagamento", async (req, res) => {
       nome,
       cpf: dadosCartao.cpfTitular,
       email: dadosCartao.email,
-      telefone: telefoneLimpo,   // ✅ usa limpo
+      telefone: telefoneLimpo,
     });
 
     console.log(`💳 Cobrança criada | charge_id: ${cobranca.chargeId}`);
@@ -141,14 +138,18 @@ router.post("/gerar_pagamento", async (req, res) => {
         cidade: endereco.cidade,
         estado: endereco.estado,
         complemento: endereco.complemento,
-        telefone: telefoneLimpo,   // ✅ usa limpo (é o que a Efí valida)
+        telefone: telefoneLimpo,
       }
     );
 
     console.log(`💳 Pagamento processado | charge_id: ${cobranca.chargeId}`);
+    console.log(`💳 Resposta pagamento:`, JSON.stringify(pagamento));
 
     // -------- 4. Devolve resultado --------
-    const statusPagamento = pagamento?.data?.status || pagamento?.status || "unknown";
+    const statusPagamento =
+      pagamento?.data?.status ||
+      pagamento?.status ||
+      "unknown";
 
     res.json({
       chargeId: cobranca.chargeId,
@@ -174,6 +175,30 @@ router.post("/gerar_pagamento", async (req, res) => {
       erro: "Erro ao processar pagamento com cartão",
       detalhe: err.response?.data || err.message,
     });
+  }
+});
+
+/* ======================================================
+   CONSULTAR STATUS DA COBRANÇA (polling do frontend)
+====================================================== */
+router.get("/status_cartao", async (req, res) => {
+  try {
+    const { chargeId } = req.query;
+    if (!chargeId) return res.status(400).json({ erro: "chargeId não informado" });
+
+    const cobranca = await consultarCobrancaCartao(chargeId);
+
+    const status = cobranca.data?.status || cobranca.status;
+    console.log(`🔍 Consulta cartão ${chargeId}: ${status}`);
+
+    if (status === "paid") {
+      return res.json({ status: "CONCLUIDA" });
+    }
+    return res.json({ status: "PENDENTE" });
+
+  } catch (err) {
+    console.error("❌ Erro ao consultar cobrança cartão:", err.message);
+    res.status(500).json({ erro: "Erro ao consultar cobrança" });
   }
 });
 
