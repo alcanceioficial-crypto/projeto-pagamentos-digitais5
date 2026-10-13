@@ -15,7 +15,7 @@ const { enviarEmailPedido } = require("../services/email.service");
    CONFIGURAÇÃO (DEVE SER IGUAL AO pix.routes.js)
 ====================================================== */
 
-const PRECO_UNITARIO = 3.00;
+const PRECO_UNITARIO = 89.22;
 const DESCRICAO_PRODUTO = "Camiseta Levanta Limeira";
 
 /* ======================================================
