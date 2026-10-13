@@ -91,7 +91,13 @@ async function pagarCobrancaCartao(chargeId, paymentToken, dadosCartao) {
           state: dadosCartao.estado || "SP",
           complement: dadosCartao.complemento || "",
         },
-        // ✅ `customer` foi REMOVIDO daqui
+        // ✅ ADICIONADO DE VOLTA AQUI (obrigatório para cartão)
+        customer: {
+          name: dadosCartao.nomeTitular,
+          cpf: (dadosCartao.cpfTitular || "").replace(/\D/g, ""),
+          email: dadosCartao.email || "cliente@levantaLimeira.com",
+          phone_number: (dadosCartao.telefone || "").replace(/\D/g, ""),
+        },
       },
     },
   };
@@ -110,7 +116,6 @@ async function pagarCobrancaCartao(chargeId, paymentToken, dadosCartao) {
 
   return response.data;
 }
-
 module.exports = {
   criarCobrancaCartao,
   pagarCobrancaCartao,
