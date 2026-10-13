@@ -47,16 +47,11 @@ async function criarCobrancaCartao({ valor, descricao, nome, cpf, email, telefon
     items: [
       {
         name: descricao || "Pedido Levanta Limeira",
-        value: Math.round(valor * 100), // Efí usa centavos
+        value: Math.round(valor * 100),
         amount: 1,
       },
     ],
-    customer: {
-      name: nome,
-      cpf: (cpf || "").replace(/\D/g, ""),
-      email: email || "cliente@levantaLimeira.com",
-      phone_number: (telefone || "").replace(/\D/g, ""),
-    },
+    // ✅ customer foi REMOVIDO daqui também
   };
 
   const response = await axios.post(
@@ -77,7 +72,6 @@ async function criarCobrancaCartao({ valor, descricao, nome, cpf, email, telefon
     raw: response.data,
   };
 }
-
 /* ======================================================
    PAGAR COBRANÇA COM TOKEN DO CARTÃO
 ====================================================== */
