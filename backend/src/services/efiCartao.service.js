@@ -97,12 +97,7 @@ async function pagarCobrancaCartao(chargeId, paymentToken, dadosCartao) {
           state: dadosCartao.estado || "SP",
           complement: dadosCartao.complemento || "",
         },
-        customer: {
-          name: dadosCartao.nomeTitular,
-          cpf: (dadosCartao.cpfTitular || "").replace(/\D/g, ""),
-          email: dadosCartao.email || "cliente@levantaLimeira.com",
-          phone_number: (dadosCartao.telefone || "").replace(/\D/g, ""),
-        },
+        // ✅ `customer` foi REMOVIDO daqui
       },
     },
   };
