@@ -10,36 +10,36 @@ const {
 const { salvarPedido } = require("../services/pedidoStore.service");
 
 /* ======================================================
-   LIMPA E AJUSTA O TELEFONE PARA O PADRÃO DA EFÍ
-   (10 ou 11 dígitos: DDD + número, sem 55, sem símbolos)
+   CONFIGURAÇÃO (DEVE SER IGUAL AO pix.routes.js)
+====================================================== */
+
+const PRECO_UNITARIO = 0.50;
+const DESCRICAO_PRODUTO = "Camiseta Levanta Limeira";
+
+/* ======================================================
+   ✅ LIMPA TELEFONE PARA O PADRÃO DA EFÍ
+   Padrão exigido: ^[1-9]{2}9?[0-9]{8}$ (10 ou 11 dígitos)
 ====================================================== */
 function limparTelefone(tel) {
-  // Remove tudo que não for número
   let nums = (tel || "").replace(/\D/g, "");
 
-  // Remove o "55" do início (código do Brasil) se tiver
+  // Remove o "55" do início (Brasil)
   if (nums.startsWith("55") && nums.length > 11) {
     nums = nums.slice(2);
   }
 
-  // Se ficou com mais de 11 dígitos, corta os extras do início
+  // Se ficou com mais de 11, pega só os últimos 11
   if (nums.length > 11) {
     nums = nums.slice(-11);
   }
 
-  // Se ficou com menos de 10, preenche com 0 à esquerda (segurança)
+  // Se ficou com menos de 10, preenche com 0 à esquerda
   while (nums.length < 10) {
     nums = "0" + nums;
   }
 
   return nums;
 }
-/* ======================================================
-   CONFIGURAÇÃO (DEVE SER IGUAL AO pix.routes.js)
-====================================================== */
-
-const PRECO_UNITARIO = 0.50;
-const DESCRICAO_PRODUTO = "Camiseta Levanta Limeira";
 
 /* ======================================================
    GERAR COBRANÇA DE CARTÃO + PAGAR COM TOKEN
@@ -95,7 +95,11 @@ router.post("/gerar_pagamento", async (req, res) => {
       totalPecas === 1 ? "peça" : "peças"
     }) - ${nome}`;
 
+    // ✅ LIMPA O TELEFONE UMA VEZ
+    const telefoneLimpo = limparTelefone(whatsapp);
+
     console.log(`💳 Iniciando cobrança cartão | valor: R$ ${total} | peças: ${totalPecas}`);
+    console.log(`📞 Telefone original: ${whatsapp} | limpo: ${telefoneLimpo}`);
 
     // -------- 1. Cria a cobrança --------
     const cobranca = await criarCobrancaCartao({
@@ -104,13 +108,12 @@ router.post("/gerar_pagamento", async (req, res) => {
       nome,
       cpf: dadosCartao.cpfTitular,
       email: dadosCartao.email,
-      telefone: whatsapp,
+      telefone: telefoneLimpo,   // ✅ usa limpo
     });
 
     console.log(`💳 Cobrança criada | charge_id: ${cobranca.chargeId}`);
 
-    // -------- 2. Salva pedido em memória (associado ao charge_id) --------
-    // ⚠️ Usamos charge_id como chave porque o webhook de cartão vem com charge_id
+    // -------- 2. Salva pedido em memória --------
     salvarPedido(cobranca.chargeId, {
       nome,
       whatsapp,
@@ -138,6 +141,7 @@ router.post("/gerar_pagamento", async (req, res) => {
         cidade: endereco.cidade,
         estado: endereco.estado,
         complemento: endereco.complemento,
+        telefone: telefoneLimpo,   // ✅ usa limpo (é o que a Efí valida)
       }
     );
 
