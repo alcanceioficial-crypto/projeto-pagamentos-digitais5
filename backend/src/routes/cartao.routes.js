@@ -10,6 +10,31 @@ const {
 const { salvarPedido } = require("../services/pedidoStore.service");
 
 /* ======================================================
+   LIMPA E AJUSTA O TELEFONE PARA O PADRÃO DA EFÍ
+   (10 ou 11 dígitos: DDD + número, sem 55, sem símbolos)
+====================================================== */
+function limparTelefone(tel) {
+  // Remove tudo que não for número
+  let nums = (tel || "").replace(/\D/g, "");
+
+  // Remove o "55" do início (código do Brasil) se tiver
+  if (nums.startsWith("55") && nums.length > 11) {
+    nums = nums.slice(2);
+  }
+
+  // Se ficou com mais de 11 dígitos, corta os extras do início
+  if (nums.length > 11) {
+    nums = nums.slice(-11);
+  }
+
+  // Se ficou com menos de 10, preenche com 0 à esquerda (segurança)
+  while (nums.length < 10) {
+    nums = "0" + nums;
+  }
+
+  return nums;
+}
+/* ======================================================
    CONFIGURAÇÃO (DEVE SER IGUAL AO pix.routes.js)
 ====================================================== */
 
