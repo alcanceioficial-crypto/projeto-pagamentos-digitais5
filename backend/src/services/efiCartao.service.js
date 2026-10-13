@@ -39,6 +39,7 @@ async function getToken() {
 
 /* ======================================================
    CRIAR COBRANÇA (CARTÃO DE CRÉDITO)
+   ⚠️ NÃO envia 'customer' aqui — só no /pay
 ====================================================== */
 async function criarCobrancaCartao({ valor, descricao, nome, cpf, email, telefone }) {
   const token = await getToken();
@@ -47,16 +48,11 @@ async function criarCobrancaCartao({ valor, descricao, nome, cpf, email, telefon
     items: [
       {
         name: descricao || "Pedido Levanta Limeira",
-        value: Math.round(valor * 100),
+        value: Math.round(valor * 100), // Efí usa centavos
         amount: 1,
       },
     ],
-    customer: {
-      name: nome,
-      cpf: (cpf || "").replace(/\D/g, ""),
-      email: email || "cliente@levantalimeira.com",
-      phone_number: (telefone || "").replace(/\D/g, ""),
-    },
+    // ✅ customer foi REMOVIDO daqui (a Efí não aceita nesta etapa)
   };
 
   const response = await axios.post(
@@ -80,6 +76,7 @@ async function criarCobrancaCartao({ valor, descricao, nome, cpf, email, telefon
 
 /* ======================================================
    PAGAR COBRANÇA COM TOKEN DO CARTÃO
+   ✅ O 'customer' vai AQUI dentro de credit_card
 ====================================================== */
 async function pagarCobrancaCartao(chargeId, paymentToken, dadosCartao) {
   const token = await getToken();
