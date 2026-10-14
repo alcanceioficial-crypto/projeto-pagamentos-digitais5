@@ -1,4 +1,3 @@
-
 const express = require("express");
 const router = express.Router();
 
@@ -98,7 +97,7 @@ router.post("/gerar_pagamento", async (req, res) => {
 
     console.log(`💳 Cobrança criada | charge_id: ${cobranca.chargeId}`);
 
-    // Salva pedido em memória
+    // Monta o objeto do pedido (usado tanto para salvar quanto para o e-mail)
     const pedido = {
       nome,
       whatsapp,
@@ -113,6 +112,7 @@ router.post("/gerar_pagamento", async (req, res) => {
       metodoPagamento: "cartao",
     };
 
+    // Salva pedido em memória
     salvarPedido(cobranca.chargeId, pedido);
 
     const pagamento = await pagarCobrancaCartao(
@@ -139,9 +139,9 @@ router.post("/gerar_pagamento", async (req, res) => {
       pagamento?.status ||
       "unknown";
 
-    // ✅ SE FOI PAGO, ENVIA O E-MAIL DIRETAMENTE AQUI
-    if (statusPagamento === "paid") {
-      console.log(`✅ CARTÃO PAGO — enviando e-mail para a loja...`);
+    // ✅ Aceita "paid" OU "approved" como pagamento confirmado
+    if (statusPagamento === "paid" || statusPagamento === "approved") {
+      console.log(`✅ CARTÃO PAGO (${statusPagamento}) — enviando e-mail para a loja...`);
       try {
         await enviarEmailPedido(pedido, cobranca.chargeId);
         removerPedido(cobranca.chargeId);
@@ -160,7 +160,7 @@ router.post("/gerar_pagamento", async (req, res) => {
       totalPecas,
       metodo: "cartao",
       mensagem:
-        statusPagamento === "paid"
+        (statusPagamento === "paid" || statusPagamento === "approved")
           ? "Pagamento aprovado!"
           : "Pagamento em processamento. Aguarde a confirmação.",
     });
@@ -192,11 +192,11 @@ router.get("/status_cartao", async (req, res) => {
     const status = cobranca.data?.status || cobranca.status;
     console.log(`🔍 Consulta cartão ${chargeId}: ${status}`);
 
-    // ✅ Se o polling detectou "paid", envia e-mail (caso não tenha sido enviado antes)
-    if (status === "paid") {
+    // ✅ Aceita "paid" OU "approved" como pagamento confirmado
+    if (status === "paid" || status === "approved") {
       const pedido = buscarPedido(chargeId);
       if (pedido) {
-        console.log(`✅ Polling detectou pagamento — enviando e-mail`);
+        console.log(`✅ Polling detectou pagamento (${status}) — enviando e-mail`);
         try {
           await enviarEmailPedido(pedido, chargeId);
           removerPedido(chargeId);
